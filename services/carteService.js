@@ -9,7 +9,7 @@ function genererCarte(utilisateur) {
         const dossierCartes = path.join(__dirname, "../cartes");
 
         if (!fs.existsSync(dossierCartes)) {
-            fs.mkdirSync(dossierCartes);
+            fs.mkdirSync(dossierCartes, { recursive: true });
         }
 
         const nomFichier = `carte_${utilisateur.id}.pdf`;
@@ -35,35 +35,37 @@ function genererCarte(utilisateur) {
 
 
         doc
-            .rect(0, 0, 500, 70)
+            .rect(0, 0, 500, 65)
             .fill("#1E3A5F");
 
         doc
             .fillColor("white")
-            .fontSize(22)
+            .fontSize(21)
             .font("Helvetica-Bold")
             .text(
                 "CARTE D'IDENTIFICATION",
                 20,
-                23,
+                21,
                 {
                     width: 460,
                     align: "center"
                 }
             );
 
-        
+
         doc
-            .rect(30, 100, 100, 120)
+            .rect(25, 85, 100, 120)
             .stroke("#333333");
 
-        if (utilisateur.photo &&fs.existsSync(utilisateur.photo))
-        {
+        if (
+            utilisateur.photo &&
+            fs.existsSync(utilisateur.photo)
+        ) {
 
             doc.image(
                 utilisateur.photo,
-                30,
-                100,
+                25,
+                85,
                 {
                     width: 100,
                     height: 120
@@ -78,8 +80,8 @@ function genererCarte(utilisateur) {
                 .font("Helvetica")
                 .text(
                     "PHOTO",
-                    30,
-                    150,
+                    25,
+                    138,
                     {
                         width: 100,
                         align: "center"
@@ -87,42 +89,71 @@ function genererCarte(utilisateur) {
                 );
         }
 
-        
 
         doc
             .fillColor("#000000")
-            .fontSize(14)
-            .font("Helvetica-Bold");
+            .fontSize(15)
+            .font("Helvetica-Bold")
+            .text(
+                `${utilisateur.prenom} ${utilisateur.nom}`,
+                145,
+                82,
+                {
+                    width: 330
+                }
+            );
 
-        doc.text(
-            `${utilisateur.prenom} ${utilisateur.nom}`,
-            160,
-            105
-        );
 
         doc
-            .fontSize(12)
+            .fontSize(10)
             .font("Helvetica");
 
         doc.text(
-            `ID : ${utilisateur.id}`,
-            160,
-            140
+            `N: ${utilisateur.id}`,
+            145,
+            112
+        );
+
+        const dateFormatee = new Date(utilisateur.dateNaiss)
+            .toLocaleDateString("fr-FR");
+
+        doc.text(
+            `${dateFormatee}`,
+            145,
+            132
         );
 
         doc.text(
-            `Email : ${utilisateur.email}`,
-            160,
-            165
+            `${utilisateur.category}`,
+            145,
+            152
         );
 
         doc.text(
-            `Téléphone : ${utilisateur.telephone || "Non renseigné"}`,
-            160,
-            190
+            `${utilisateur.grade}`,
+            145,
+            172
         );
 
-       
+        doc.text(
+            `${utilisateur.adresse}`,
+            145,
+            192,
+            {
+                width: 320
+            }
+        );
+
+        doc.text(
+            `${utilisateur.clubName}`,
+            145,
+            212,
+            {
+                width: 320
+            }
+        );
+
+
         doc
             .rect(0, 260, 500, 40)
             .fill("#1E3A5F");
@@ -130,6 +161,7 @@ function genererCarte(utilisateur) {
         doc
             .fillColor("white")
             .fontSize(10)
+            .font("Helvetica")
             .text(
                 "Carte générée automatiquement",
                 0,
@@ -139,6 +171,7 @@ function genererCarte(utilisateur) {
                     align: "center"
                 }
             );
+
 
         doc.end();
 
@@ -154,6 +187,7 @@ function genererCarte(utilisateur) {
         stream.on("error", (error) => {
             reject(error);
         });
+
     });
 }
 

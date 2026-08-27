@@ -1,5 +1,7 @@
 const db = require("../database");
-
+const { formidable } = require("formidable");
+const path = require("path");
+const fs = require("fs");
 function getUtilisateurs(req, res) {
 
     const sql = "SELECT * FROM utilisateurs";
@@ -56,149 +58,139 @@ function getUtilisateurById(req, res, id) {
         }));
     });
 }
-
 function createUtilisateur(req, res) {
 
-    let body = "";
+    const uploadDir = path.join(__dirname, "../uploads");
 
-    req.on("data", (chunk) => {
-        body += chunk.toString();
+    // Créer le dossier uploads s'il n'existe pas
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const form = formidable({
+        uploadDir: uploadDir,
+        keepExtensions: true,
+        multiples: false
     });
 
-    req.on("end", () => {
+    form.parse(req, (err, fields, files) => {
 
-        try {
+        if (err) {
+            res.statusCode = 400;
 
-            const data = JSON.parse(body);
+            return res.end(JSON.stringify({
+                message: "Erreur lors de l'upload",
+                error: err.message
+            }));
+        }
 
-            const {
-                nom,
-                prenom,
-                email,
-                telephone,
-                date_naissance,
-                adresse,
-                photo
-            } = data;
+        // Récupération des champs
+        const nom = fields.nom?.[0];
+        const prenom = fields.prenom?.[0];
+        const dateNaiss = fields.dateNaiss?.[0];
+        const category = fields.category?.[0];
+        const adresse = fields.adresse?.[0];
+        const grade = fields.grade?.[0];
+        const clubName = fields.clubName?.[0];
 
-            // ==========================
-            // Vérification des champs
-            // ==========================
+        // Récupération de la photo
+        const photoFile = files.photo?.[0];
 
-            if (!nom || !prenom || !email) {
+        let photoPath = null;
 
-                res.statusCode = 400;
+        if (photoFile) {
+            photoPath = photoFile.filepath;
+        }
 
-                return res.end(JSON.stringify({
-                    message: "nom, prenom et email sont obligatoires"
-                }));
+        // Vérification des champs obligatoires
+        if (
+            !nom ||
+            !prenom ||
+            !dateNaiss ||
+            !category ||
+            !adresse ||
+            !grade ||
+            !clubName
+        ) {
+
+            // Supprimer la photo si les données sont invalides
+            if (photoPath && fs.existsSync(photoPath)) {
+                fs.unlinkSync(photoPath);
             }
-
-            // ==========================
-            // Vérifier si l'email existe
-            // ==========================
-
-            const checkEmailSql = `
-                SELECT id
-                FROM utilisateurs
-                WHERE email = ?
-            `;
-
-            db.query(checkEmailSql, [email], (err, results) => {
-
-                // Erreur base de données
-                if (err) {
-
-                    res.statusCode = 500;
-
-                    return res.end(JSON.stringify({
-                        message: "Erreur lors de la vérification de l'email",
-                        error: err.message
-                    }));
-                }
-
-                // L'email existe déjà
-                if (results.length > 0) {
-
-                    res.statusCode = 409;
-
-                    return res.end(JSON.stringify({
-                        message: "Cet email existe déjà"
-                    }));
-                }
-
-                // ==========================
-                // Créer l'utilisateur
-                // ==========================
-
-                const sql = `
-                    INSERT INTO utilisateurs
-                    (
-                        nom,
-                        prenom,
-                        email,
-                        telephone,
-                        date_naissance,
-                        adresse,
-                        photo
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                `;
-
-                const values = [
-                    nom,
-                    prenom,
-                    email,
-                    telephone || null,
-                    date_naissance || null,
-                    adresse || null,
-                    photo || null
-                ];
-
-                db.query(sql, values, (err, result) => {
-
-                    // Erreur lors de l'insertion
-                    if (err) {
-
-                        res.statusCode = 500;
-
-                        return res.end(JSON.stringify({
-                            message: "Erreur lors de la création",
-                            error: err.message
-                        }));
-                    }
-
-                    // Succès
-                    res.statusCode = 201;
-
-                    res.end(JSON.stringify({
-                        message: "Utilisateur créé avec succès",
-
-                        utilisateur: {
-                            id: result.insertId,
-                            nom,
-                            prenom,
-                            email,
-                            telephone,
-                            date_naissance,
-                            adresse,
-                            photo
-                        }
-                    }));
-                });
-            });
-
-        } catch (error) {
 
             res.statusCode = 400;
 
-            res.end(JSON.stringify({
-                message: "JSON invalide"
+            return res.end(JSON.stringify({
+                message: "Tous les champs obligatoires doivent être remplis"
             }));
         }
+
+        // Requête SQL
+        const sql = `
+            INSERT INTO utilisateurs
+            (
+                nom,
+                prenom,
+                dateNaiss,
+                category,
+                adresse,
+                grade,
+                clubName,
+                photo
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const values = [
+            nom,
+            prenom,
+            dateNaiss,
+            category,
+            adresse,
+            grade,
+            clubName,
+            photoPath
+        ];
+
+        db.query(sql, values, (err, result) => {
+
+            if (err) {
+
+                // Supprimer la photo si l'insertion échoue
+                if (photoPath && fs.existsSync(photoPath)) {
+                    fs.unlinkSync(photoPath);
+                }
+
+                res.statusCode = 500;
+
+                return res.end(JSON.stringify({
+                    message: "Erreur lors de la création",
+                    error: err.message
+                }));
+            }
+
+            res.statusCode = 201;
+
+            res.end(JSON.stringify({
+
+                message: "Utilisateur créé avec succès",
+
+                utilisateur: {
+                    id: result.insertId,
+                    nom,
+                    prenom,
+                    dateNaiss,
+                    category,
+                    adresse,
+                    grade,
+                    clubName,
+                    photo: photoPath
+                }
+
+            }));
+        });
     });
 }
-
 module.exports = {
     getUtilisateurs,
     getUtilisateurById,
