@@ -2,6 +2,7 @@ const db = require("../database");
 const { formidable } = require("formidable");
 const path = require("path");
 const fs = require("fs");
+const {genererDocumentInscription} = require("../services/inscriptionService");
 function getUtilisateurs(req, res) {
 
     const sql = "SELECT * FROM utilisateurs";
@@ -60,12 +61,26 @@ function getUtilisateurById(req, res, id) {
 }
 function createUtilisateur(req, res) {
 
-    const uploadDir = path.join(__dirname, "../uploads");
+    // ==========================================
+    // DOSSIER UPLOADS
+    // ==========================================
 
-    // Créer le dossier uploads s'il n'existe pas
+    const uploadDir = path.join(
+        __dirname,
+        "../uploads"
+    );
+
     if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+
+        fs.mkdirSync(uploadDir, {
+            recursive: true
+        });
     }
+
+
+    // ==========================================
+    // FORMIDABLE
+    // ==========================================
 
     const form = formidable({
         uploadDir: uploadDir,
@@ -73,9 +88,11 @@ function createUtilisateur(req, res) {
         multiples: false
     });
 
-    form.parse(req, (err, fields, files) => {
+
+    form.parse(req, async (err, fields, files) => {
 
         if (err) {
+
             res.statusCode = 400;
 
             return res.end(JSON.stringify({
@@ -84,7 +101,11 @@ function createUtilisateur(req, res) {
             }));
         }
 
-        // Récupération des champs
+
+        // ==========================================
+        // CHAMPS
+        // ==========================================
+
         const nom = fields.nom?.[0];
         const prenom = fields.prenom?.[0];
         const dateNaiss = fields.dateNaiss?.[0];
@@ -93,16 +114,26 @@ function createUtilisateur(req, res) {
         const grade = fields.grade?.[0];
         const clubName = fields.clubName?.[0];
 
-        // Récupération de la photo
+
+        // ==========================================
+        // PHOTO
+        // ==========================================
+
         const photoFile = files.photo?.[0];
 
-        let photoPath = null;
+        let photoName = null;
 
         if (photoFile) {
-            photoPath = photoFile.filepath;
+
+            photoName =
+                path.basename(photoFile.filepath);
         }
 
-        // Vérification des champs obligatoires
+
+        // ==========================================
+        // VALIDATION
+        // ==========================================
+
         if (
             !nom ||
             !prenom ||
@@ -113,19 +144,32 @@ function createUtilisateur(req, res) {
             !clubName
         ) {
 
-            // Supprimer la photo si les données sont invalides
-            if (photoPath && fs.existsSync(photoPath)) {
-                fs.unlinkSync(photoPath);
+            if (photoName) {
+
+                const photoPath =
+                    path.join(
+                        uploadDir,
+                        photoName
+                    );
+
+                if (fs.existsSync(photoPath)) {
+                    fs.unlinkSync(photoPath);
+                }
             }
 
             res.statusCode = 400;
 
             return res.end(JSON.stringify({
-                message: "Tous les champs obligatoires doivent être remplis"
+                message:
+                    "Tous les champs obligatoires doivent être remplis"
             }));
         }
 
-        // Requête SQL
+
+        // ==========================================
+        // INSERTION MYSQL
+        // ==========================================
+
         const sql = `
             INSERT INTO utilisateurs
             (
@@ -141,6 +185,7 @@ function createUtilisateur(req, res) {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
+
         const values = [
             nom,
             prenom,
@@ -149,34 +194,52 @@ function createUtilisateur(req, res) {
             adresse,
             grade,
             clubName,
-            photoPath
+            photoName
         ];
 
-        db.query(sql, values, (err, result) => {
 
-            if (err) {
+        db.query(
+            sql,
+            values,
+            async (err, result) => {
 
-                // Supprimer la photo si l'insertion échoue
-                if (photoPath && fs.existsSync(photoPath)) {
-                    fs.unlinkSync(photoPath);
+                // ==========================================
+                // ERREUR MYSQL
+                // ==========================================
+
+                if (err) {
+
+                    if (photoName) {
+
+                        const photoPath =
+                            path.join(
+                                uploadDir,
+                                photoName
+                            );
+
+                        if (fs.existsSync(photoPath)) {
+                            fs.unlinkSync(photoPath);
+                        }
+                    }
+
+                    res.statusCode = 500;
+
+                    return res.end(JSON.stringify({
+                        message:
+                            "Erreur lors de la création",
+                        error: err.message
+                    }));
                 }
 
-                res.statusCode = 500;
 
-                return res.end(JSON.stringify({
-                    message: "Erreur lors de la création",
-                    error: err.message
-                }));
-            }
+                // ==========================================
+                // UTILISATEUR
+                // ==========================================
 
-            res.statusCode = 201;
+                const utilisateur = {
 
-            res.end(JSON.stringify({
-
-                message: "Utilisateur créé avec succès",
-
-                utilisateur: {
                     id: result.insertId,
+
                     nom,
                     prenom,
                     dateNaiss,
@@ -184,13 +247,77 @@ function createUtilisateur(req, res) {
                     adresse,
                     grade,
                     clubName,
-                    photo: photoPath
+
+                    photo: photoName
+                };
+
+
+                // ==========================================
+                // GENERATION DU PDF D'INSCRIPTION
+                // ==========================================
+
+                let documentInscription;
+
+                try {
+
+                    documentInscription =
+                        await genererDocumentInscription(
+                            utilisateur
+                        );
+
+                } catch (error) {
+
+                    console.error(
+                        "Erreur génération PDF inscription :",
+                        error
+                    );
+
+                    res.statusCode = 500;
+
+                    return res.end(JSON.stringify({
+                        message:
+                            "Utilisateur créé mais erreur lors de la génération du document d'inscription",
+                        error: error.message
+                    }));
                 }
 
-            }));
-        });
+
+                // ==========================================
+                // REPONSE
+                // ==========================================
+
+                res.statusCode = 201;
+
+                res.setHeader(
+                    "Content-Type",
+                    "application/json; charset=utf-8"
+                );
+
+
+                res.end(JSON.stringify({
+
+                    message:
+                        "Utilisateur créé avec succès",
+
+                    utilisateur: utilisateur,
+
+                    documentInscription: {
+
+                        nomFichier:
+                            documentInscription.nomFichier,
+
+                        cheminFichier:
+                            documentInscription.cheminFichier
+                    }
+
+                }));
+            }
+        );
     });
 }
+
+
+
 module.exports = {
     getUtilisateurs,
     getUtilisateurById,

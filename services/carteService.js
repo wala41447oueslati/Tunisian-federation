@@ -2,194 +2,418 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 
-function genererCarte(utilisateur) {
+const { genererQRCode } = require("./qrService");
 
-    return new Promise((resolve, reject) => {
+async function genererCarte(utilisateur) {
 
-        const dossierCartes = path.join(__dirname, "../cartes");
+    return new Promise(async (resolve, reject) => {
 
-        if (!fs.existsSync(dossierCartes)) {
-            fs.mkdirSync(dossierCartes, { recursive: true });
-        }
+        try {
 
-        const nomFichier = `carte_${utilisateur.id}.pdf`;
+            const dossierCartes = path.join(
+                __dirname,
+                "../cartes"
+            );
 
-        const cheminFichier = path.join(
-            dossierCartes,
-            nomFichier
-        );
-
-        const doc = new PDFDocument({
-            size: [500, 300],
-            margin: 0
-        });
-
-        const stream = fs.createWriteStream(cheminFichier);
-
-        doc.pipe(stream);
+            if (!fs.existsSync(dossierCartes)) {
+                fs.mkdirSync(dossierCartes, {
+                    recursive: true
+                });
+            }
 
 
-        doc
-            .rect(0, 0, 500, 300)
-            .fill("#F5F5F5");
+            let photoPath = null;
 
+            if (utilisateur.photo) {
 
-        doc
-            .rect(0, 0, 500, 65)
-            .fill("#1E3A5F");
+                photoPath = path.join(
+                    __dirname,
+                    "../uploads",
+                    utilisateur.photo
+                );
+            }
 
-        doc
-            .fillColor("white")
-            .fontSize(21)
-            .font("Helvetica-Bold")
-            .text(
-                "CARTE D'IDENTIFICATION",
-                20,
-                21,
-                {
-                    width: 460,
-                    align: "center"
-                }
+            const qrPath = await genererQRCode(
+                utilisateur.id,
+                dossierCartes
             );
 
 
-        doc
-            .rect(25, 85, 100, 120)
-            .stroke("#333333");
+            const nomFichier =
+                `carte_${utilisateur.id}.pdf`;
 
-        if (
-            utilisateur.photo &&
-            fs.existsSync(utilisateur.photo)
-        ) {
-
-            doc.image(
-                utilisateur.photo,
-                25,
-                85,
-                {
-                    width: 100,
-                    height: 120
-                }
+            const cheminFichier = path.join(
+                dossierCartes,
+                nomFichier
             );
 
-        } else {
+            const doc = new PDFDocument({
+                size: [370, 232],
+                margin: 0
+            });
+
+            const stream = fs.createWriteStream(
+                cheminFichier
+            );
+
+            doc.pipe(stream);
+
+
 
             doc
-                .fillColor("#777777")
-                .fontSize(12)
-                .font("Helvetica")
-                .text(
-                    "PHOTO",
-                    25,
-                    138,
+                .rect(0, 0, 370, 232)
+                .fill("#F4F4F4");
+
+
+            doc
+                .rect(0, 0, 370, 48)
+                .fill("#FFFFFF");
+                
+            const tunisieLogoPath = path.join(
+                __dirname,
+                "../assets/Tunisia.png"
+            );
+
+            const federationLogoPath = path.join(
+                __dirname,
+                "../assets/federation.png"
+            );
+
+
+
+            if (fs.existsSync(tunisieLogoPath)) {
+
+                doc.image(
+                    tunisieLogoPath,
+                    8,
+                    10,
                     {
-                        width: 100,
+                        width: 32,
+                        height: 25
+                    }
+                );
+            }
+
+
+
+            doc
+                .fillColor("#555555")
+                .font("Helvetica-Bold")
+                .fontSize(6.5)
+                .text(
+                    "République Tunisienne",
+                    45,
+                    10,
+                    {
+                        width: 105
+                    }
+                );
+
+
+
+            doc
+                .font("Helvetica")
+                .fontSize(5.5)
+                .fillColor("#666666")
+                .text(
+                    "Ministère des affaires",
+                    45,
+                    20,
+                    {
+                        width: 105
+                    }
+                );
+
+
+
+            doc
+                .font("Helvetica")
+                .fontSize(5.5)
+                .text(
+                    "de la jeunesse et des sports",
+                    45,
+                    28,
+                    {
+                        width: 110
+                    }
+                );
+
+
+            if (fs.existsSync(federationLogoPath)) {
+
+                doc.image(
+                    federationLogoPath,
+                    245,
+                    6,
+                    {
+                        width: 40,
+                        height: 38
+                    }
+                );
+            }
+
+
+            doc
+                .font("Helvetica")
+                .fontSize(6.5)
+                .fillColor("#555555")
+                .text(
+                    "Tunisian",
+                    290,
+                    8,
+                    {
+                        width: 70
+                    }
+                );
+
+            doc
+                .font("Helvetica")
+                .fontSize(6.5)
+                .text(
+                    "Taekwondo",
+                    290,
+                    18,
+                    {
+                        width: 70
+                    }
+                );
+
+            doc
+                .font("Helvetica")
+                .fontSize(6.5)
+                .text(
+                    "Federation",
+                    290,
+                    28,
+                    {
+                        width: 70
+                    }
+           );
+
+
+
+            const photoX = 18;
+            const photoY = 58;
+            const photoWidth = 90;
+            const photoHeight = 110;
+
+            doc
+                .rect(
+                    photoX,
+                    photoY,
+                    photoWidth,
+                    photoHeight
+                )
+                .stroke("#CCCCCC");
+
+
+            if (
+                photoPath &&
+                fs.existsSync(photoPath)
+            ) {
+
+                doc.image(
+                    photoPath,
+                    photoX,
+                    photoY,
+                    {
+                        width: photoWidth,
+                        height: photoHeight
+                    }
+                );
+
+            } else {
+
+                doc
+                    .fillColor("#888888")
+                    .font("Helvetica")
+                    .fontSize(10)
+                    .text(
+                        "PHOTO",
+                        photoX,
+                        105,
+                        {
+                            width: photoWidth,
+                            align: "center"
+                        }
+                    );
+            }
+
+
+            const infoX = 120;
+
+
+
+            doc
+                .fillColor("#222222")
+                .font("Helvetica-Bold")
+                .fontSize(12)
+                .text(
+                    `${utilisateur.prenom || ""} ${utilisateur.nom || ""}`,
+                    infoX,
+                    60,
+                    {
+                        width: 145
+                    }
+                );
+
+
+            let dateFormatee = "";
+
+            if (utilisateur.dateNaiss) {
+
+                dateFormatee =
+                    new Date(utilisateur.dateNaiss)
+                        .toLocaleDateString("fr-FR");
+            }
+
+            doc
+                .font("Helvetica")
+                .fontSize(8)
+                .fillColor("#222222")
+                .text(
+                    `Date de naissance : ${dateFormatee}`,
+                    infoX,
+                    92,
+                    {
+                        width: 150
+                    }
+                );
+
+
+            doc.text(
+                `Catégorie : ${utilisateur.category || ""}`,
+                infoX,
+                110,
+                {
+                    width: 150
+                }
+            );
+
+
+            doc.text(
+                `Grade : ${utilisateur.grade || ""}`,
+                infoX,
+                128,
+                {
+                    width: 150
+                }
+            );
+
+
+
+            doc.text(
+                `Adresse : ${utilisateur.adresse || ""}`,
+                infoX,
+                146,
+                {
+                    width: 150
+                }
+            );
+
+
+            doc.text(
+                `Club : ${utilisateur.clubName || ""}`,
+                infoX,
+                164,
+                {
+                    width: 150
+                }
+            );
+
+
+
+            doc.image(
+                qrPath,
+                280,
+                55,
+                {
+                    width: 65,
+                    height: 65
+                }
+            );
+
+
+
+            doc
+                .font("Helvetica-Bold")
+                .fontSize(8)
+                .fillColor("#333333")
+                .text(
+                    `N° : ${utilisateur.id}`,
+                    275,
+                    125,
+                    {
+                        width: 75,
                         align: "center"
                     }
                 );
-        }
 
 
-        doc
-            .fillColor("#000000")
-            .fontSize(15)
-            .font("Helvetica-Bold")
-            .text(
-                `${utilisateur.prenom} ${utilisateur.nom}`,
-                145,
-                82,
-                {
-                    width: 330
+            doc
+                .rect(
+                    0,
+                    198,
+                    370,
+                    34
+                )
+                .fill("#0878C9");
+
+
+            doc
+                .fillColor("#FFFFFF")
+                .font("Helvetica-Bold")
+                .fontSize(20)
+                .text(
+                    "ATHLETE",
+                    18,
+                    205
+                );
+
+
+            doc.end();
+
+
+            stream.on(
+                "finish",
+                () => {
+
+
+                    if (
+                        qrPath &&
+                        fs.existsSync(qrPath)
+                    ) {
+
+                        fs.unlinkSync(qrPath);
+                    }
+
+
+                    resolve({
+                        nomFichier,
+                        cheminFichier
+                    });
+
                 }
             );
 
 
-        doc
-            .fontSize(10)
-            .font("Helvetica");
+            stream.on(
+                "error",
+                (error) => {
 
-        doc.text(
-            `N: ${utilisateur.id}`,
-            145,
-            112
-        );
+                    reject(error);
 
-        const dateFormatee = new Date(utilisateur.dateNaiss)
-            .toLocaleDateString("fr-FR");
-
-        doc.text(
-            `${dateFormatee}`,
-            145,
-            132
-        );
-
-        doc.text(
-            `${utilisateur.category}`,
-            145,
-            152
-        );
-
-        doc.text(
-            `${utilisateur.grade}`,
-            145,
-            172
-        );
-
-        doc.text(
-            `${utilisateur.adresse}`,
-            145,
-            192,
-            {
-                width: 320
-            }
-        );
-
-        doc.text(
-            `${utilisateur.clubName}`,
-            145,
-            212,
-            {
-                width: 320
-            }
-        );
-
-
-        doc
-            .rect(0, 260, 500, 40)
-            .fill("#1E3A5F");
-
-        doc
-            .fillColor("white")
-            .fontSize(10)
-            .font("Helvetica")
-            .text(
-                "Carte générée automatiquement",
-                0,
-                275,
-                {
-                    width: 500,
-                    align: "center"
                 }
             );
 
+        } catch (error) {
 
-        doc.end();
-
-        stream.on("finish", () => {
-
-            resolve({
-                nomFichier,
-                cheminFichier
-            });
-
-        });
-
-        stream.on("error", (error) => {
             reject(error);
-        });
 
+        }
     });
 }
+
 
 module.exports = {
     genererCarte

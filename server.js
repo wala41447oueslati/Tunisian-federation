@@ -1,42 +1,82 @@
 const http = require("http");
 
-const utilisateurRoutes = require("./routes/utilisateurRoutes");
+const utilisateurRoutes =
+    require("./routes/utilisateurRoutes");
 
-const carteRoutes = require("./routes/carteRoutes");
+const carteRoutes =
+    require("./routes/carteRoutes");
 
-
-const server = http.createServer((req, res) => {
-
-    res.setHeader("Content-Type", "application/json");
-
-    console.log(req.method, req.url);
+const verificationRoutes =
+    require("./routes/verificationRoutes");
 
 
-    const utilisateurRoute = utilisateurRoutes(req, res);
+const server =
+    http.createServer(
+        (req, res) => {
 
-    if (utilisateurRoute) {
-        return;
-    }
-
-
-    const carteRoute =carteRoutes(req, res);
-
-    if (carteRoute) {
-        return;
-    }
-
-    res.statusCode = 404;
-
-    res.end(JSON.stringify({
-        message: "Route introuvable"
-    }));
-});
+            console.log(
+                req.method,
+                req.url
+            );
 
 
-server.listen(3000, () => {
 
-    console.log(
-        "Serveur démarré sur http://localhost:3000"
+            if (
+                utilisateurRoutes(
+                    req,
+                    res
+                )
+            ) {
+                return;
+            }
+
+
+
+            if (
+                carteRoutes(
+                    req,
+                    res
+                )
+            ) {
+                return;
+            }
+
+            if (
+                verificationRoutes(
+                    req,
+                    res
+                )
+            ) {
+                return;
+            }
+
+
+
+            res.statusCode = 404;
+
+            res.setHeader(
+                "Content-Type",
+                "application/json"
+            );
+
+
+            res.end(
+                JSON.stringify({
+                    message:
+                        "Route introuvable"
+                })
+            );
+        }
     );
 
-});
+
+server.listen(
+    3000,
+    () => {
+
+        console.log(
+            "Serveur démarré sur " +
+            "http://localhost:3000"
+        );
+    }
+);
