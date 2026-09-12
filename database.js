@@ -1,13 +1,8 @@
 const mysql = require("mysql2");
 
-console.log("MYSQLHOST =", process.env.MYSQLHOST);
-console.log("MYSQLPORT =", process.env.MYSQLPORT);
-console.log("MYSQLUSER =", process.env.MYSQLUSER);
-console.log("MYSQLDATABASE =", process.env.MYSQLDATABASE);
-
 const db = mysql.createPool({
     host: process.env.MYSQLHOST,
-    port: process.env.MYSQLPORT,
+    port: Number(process.env.MYSQLPORT || 3306),
     user: process.env.MYSQLUSER,
     password: process.env.MYSQLPASSWORD,
     database: process.env.MYSQLDATABASE,
@@ -17,13 +12,14 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-db.query("SELECT DATABASE() AS databaseName", (err, result) => {
+db.getConnection((err, connection) => {
     if (err) {
-        console.error("ERREUR MYSQL :", err);
+        console.error("❌ ERREUR CONNEXION MYSQL :", err);
         return;
     }
 
-    console.log("DATABASE UTILISÉE :", result);
+    console.log("✅ MYSQL CONNECTÉ");
+    connection.release();
 });
 
 module.exports = db;
