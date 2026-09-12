@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Inscription Athlète</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Inscription Athlète</h1>
+
+        <p class="description">
+            Remplissez le formulaire pour générer votre carte.
+        </p>
+
+        <form id="inscriptionForm">
+
+            <div class="form-group">
+                <label for="nom">Nom</label>
+
+                <input
+                    type="text"
+                    id="nom"
+                    name="nom"
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="prenom">Prénom</label>
+
+                <input
+                    type="text"
+                    id="prenom"
+                    name="prenom"
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="dateNaiss">
+                    Date de naissance
+                </label>
+
+                <input
+                    type="date"
+                    id="dateNaiss"
+                    name="dateNaiss"
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="category">
+                    Catégorie
+                </label>
+
+                <input
+                    type="text"
+                    id="category"
+                    name="category"
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="adresse">
+                    Adresse
+                </label>
+
+                <input
+                    type="text"
+                    id="adresse"
+                    name="adresse"
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="grade">
+                    Grade
+                </label>
+
+                <input
+                    type="text"
+                    id="grade"
+                    name="grade"
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="clubName">
+                    Club
+                </label>
+
+                <input
+                    type="text"
+                    id="clubName"
+                    name="clubName"
+                    required
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="photo">
+                    Photo
+                </label>
+
+                <input
+                    type="file"
+                    id="photo"
+                    name="photo"
+                    accept="image/*"
+                    required
+                >
+            </div>
+
+
+            <button
+                type="submit"
+                id="submitButton"
+            >
+                S'inscrire et générer ma carte
+            </button>
+
+        </form>
+
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+
+        <div
+            id="downloadSection"
+            class="download-section"
+            style="display: none;"
+        >
+
+            <p>
+                ✅ Votre carte est prête !
+            </p>
+
+            <a
+                id="downloadLink"
+                href="#"
+                download
+            >
+                Télécharger ma carte
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
