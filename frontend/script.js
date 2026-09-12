@@ -153,7 +153,8 @@ form.addEventListener("submit", async function (event) {
                 }
             );
 
-
+        console.log("Status carte :", carteResponse.status);
+        console.log("Content-Type :", carteResponse.headers.get("content-type"));
         if (!carteResponse.ok) {
 
             const error =
@@ -171,6 +172,10 @@ form.addEventListener("submit", async function (event) {
 
         const pdfBlob =
             await carteResponse.blob();
+
+        console.log("PDF Blob :", pdfBlob);
+        console.log("Taille :", pdfBlob.size);
+        console.log("Type :", pdfBlob.type);
 
 
         const pdfUrl =

@@ -1,5 +1,5 @@
 const db = require("../database");
-
+const fs = require("fs");
 const {
     genererCarte
 } = require("../services/carteService");
@@ -57,22 +57,23 @@ function creerCarte(req, res, id) {
                     );
 
 
-                res.statusCode = 201;
+                res.statusCode = 200;
 
-
-                res.end(
-                    JSON.stringify({
-
-                        message:
-                            "Carte générée avec succès",
-
-                        fichier:
-                            carte.nomFichier,
-
-                        chemin:
-                            carte.cheminFichier
-                    })
+                res.setHeader(
+                    "Content-Type",
+                    "application/pdf"
                 );
+
+                res.setHeader(
+                    "Content-Disposition",
+                    `inline; filename="${carte.nomFichier}"`
+                );
+
+                const file = fs.createReadStream(
+                    carte.cheminFichier
+                );
+
+                file.pipe(res);
 
 
             } catch (error) {
