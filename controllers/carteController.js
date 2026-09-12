@@ -1,4 +1,5 @@
 const db = require("../database");
+const fs = require("fs");
 
 const {
     genererCarte
@@ -12,7 +13,6 @@ function creerCarte(req, res, id) {
         FROM utilisateurs
         WHERE id = ?
     `;
-
 
     db.query(
         sql,
@@ -38,53 +38,55 @@ function creerCarte(req, res, id) {
 
                 return res.end(
                     JSON.stringify({
-                        message:
-                            "Utilisateur introuvable"
+                        message: "Utilisateur introuvable"
                     })
                 );
             }
 
 
-            const utilisateur =
-                results[0];
+            const utilisateur = results[0];
 
 
             try {
 
                 const carte =
-                    await genererCarte(
-                        utilisateur
+                    await genererCarte(utilisateur);
+
+
+                // Envoyer directement le PDF
+                res.statusCode = 200;
+
+                res.setHeader(
+                    "Content-Type",
+                    "application/pdf"
+                );
+
+                res.setHeader(
+                    "Content-Disposition",
+                    `inline; filename="${carte.nomFichier}"`
+                );
+
+                const file =
+                    fs.createReadStream(
+                        carte.cheminFichier
                     );
 
-
-                res.statusCode = 201;
-
-
-                res.end(
-                    JSON.stringify({
-
-                        message:
-                            "Carte générée avec succès",
-
-                        fichier:
-                            carte.nomFichier,
-
-                        chemin:
-                            carte.cheminFichier
-                    })
-                );
+                file.pipe(res);
 
 
             } catch (error) {
 
                 res.statusCode = 500;
 
+                res.setHeader(
+                    "Content-Type",
+                    "application/json"
+                );
+
                 res.end(
                     JSON.stringify({
-
                         message:
                             "Erreur lors de la génération",
-
                         error:
                             error.message
                     })

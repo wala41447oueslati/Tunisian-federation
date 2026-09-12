@@ -6,9 +6,6 @@ function carteRoutes(req, res) {
 
     console.log("CARTE ROUTE :", req.method, req.url);
 
-    // =========================
-    // POST /cartes/:id
-    // =========================
     if (
         req.method === "POST" &&
         req.url.startsWith("/cartes/")
@@ -21,9 +18,6 @@ function carteRoutes(req, res) {
         return true;
     }
 
-    // =========================
-    // GET /cartes/:filename
-    // =========================
     if (
         req.method === "GET" &&
         req.url.startsWith("/cartes/")
