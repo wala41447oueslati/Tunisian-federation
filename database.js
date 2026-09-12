@@ -1,27 +1,24 @@
 const mysql = require("mysql2");
 
 const db = mysql.createPool({
-    host: process.env.MYSQLHOST || "localhost",
-    port: process.env.MYSQLPORT || 3306,
-    user: process.env.MYSQLUSER || "root",
-    password: process.env.MYSQLPASSWORD || "",
-    database: process.env.MYSQLDATABASE || "tunisian_taekwondo_federation",
+    host: process.env.MYSQLHOST,
+    port: process.env.MYSQLPORT,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE,
 
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
-// Tester la connexion
-db.getConnection((err, connection) => {
+db.query("SELECT DATABASE() AS databaseName", (err, result) => {
     if (err) {
-        console.error("Erreur MySQL :", err);
+        console.error("ERREUR MYSQL :", err);
         return;
     }
 
-    console.log("MySQL connecté !");
-
-    connection.release();
+    console.log("DATABASE UTILISÉE :", result);
 });
 
 module.exports = db;
