@@ -31,6 +31,13 @@ async function genererCarte(utilisateur) {
                     "../uploads",
                     utilisateur.photo
                 );
+
+                console.log("PHOTO DATABASE :", utilisateur.photo);
+                console.log("PHOTO PATH :", photoPath);
+                console.log(
+                    "PHOTO EXISTS :",
+                    photoPath ? fs.existsSync(photoPath) : false
+                );
             }
 
             const qrPath = await genererQRCode(
