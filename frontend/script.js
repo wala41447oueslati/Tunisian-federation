@@ -24,16 +24,16 @@ form.addEventListener("submit", async function (event) {
     submitButton.disabled = true;
 
     message.textContent =
-        "⏳ Inscription en cours...";
+        "⏳ Création de votre inscription...";
 
     downloadSection.style.display = "none";
 
 
     try {
 
-        // =========================
-        // 1. Récupérer les données
-        // =========================
+        // ==========================================
+        // 1. Préparer les données
+        // ==========================================
 
         const formData = new FormData();
 
@@ -72,7 +72,6 @@ form.addEventListener("submit", async function (event) {
             document.getElementById("clubName").value
         );
 
-
         const photo =
             document.getElementById("photo").files[0];
 
@@ -82,13 +81,9 @@ form.addEventListener("submit", async function (event) {
         );
 
 
-        // =========================
+        // ==========================================
         // 2. Créer l'utilisateur
-        // =========================
-
-        message.textContent =
-            "⏳ Création de votre inscription...";
-
+        // ==========================================
 
         const inscriptionResponse =
             await fetch(
@@ -111,22 +106,22 @@ form.addEventListener("submit", async function (event) {
         }
 
 
-        const utilisateur =
+        const resultat =
             await inscriptionResponse.json();
 
 
         console.log(
             "Utilisateur créé :",
-            utilisateur
+            resultat
         );
 
 
-        // =========================
-        // 3. Récupérer l'ID
-        // =========================
+        // ==========================================
+        // 3. Récupérer ID
+        // ==========================================
 
         const id =
-            utilisateur.utilisateur.id;
+            resultat.utilisateur.id;
 
 
         if (!id) {
@@ -137,87 +132,203 @@ form.addEventListener("submit", async function (event) {
         }
 
 
-        // =========================
-        // 4. Générer la carte
-        // =========================
+        // ==========================================
+        // 4. Récupérer le PDF d'inscription
+        // ==========================================
 
-        message.textContent =
-            "⏳ Génération de votre carte...";
+        const nomFichier =
+            resultat.documentInscription.nomFichier;
 
 
-        const carteResponse =
-            await fetch(
-                `${API_URL}/cartes/${id}`,
-                {
-                    method: "POST"
-                }
-            );
-
-        console.log("Status carte :", carteResponse.status);
-        console.log("Content-Type :", carteResponse.headers.get("content-type"));
-        if (!carteResponse.ok) {
-
-            const error =
-                await carteResponse.text();
+        if (!nomFichier) {
 
             throw new Error(
-                `Erreur génération carte : ${error}`
+                "Le document d'inscription n'a pas été généré."
             );
         }
 
 
-        // =========================
-        // 5. Récupérer le PDF
-        // =========================
-
-        const pdfBlob =
-            await carteResponse.blob();
-
-        console.log("PDF Blob :", pdfBlob);
-        console.log("Taille :", pdfBlob.size);
-        console.log("Type :", pdfBlob.type);
-
-
-        const pdfUrl =
-            URL.createObjectURL(pdfBlob);
-
-
-        // =========================
-        // 6. Afficher le téléchargement
-        // =========================
-
-        downloadLink.href =
-            pdfUrl;
-
-        downloadLink.download =
-            `carte_${id}.pdf`;
-
-        downloadSection.style.display =
-            "block";
-
-
         message.textContent =
-            "✅ Inscription réussie ! Votre carte est prête.";
+            "⏳ Téléchargement de votre document d'inscription...";
 
 
-        // =========================
-        // 7. Télécharger automatiquement
-        // =========================
+        const inscriptionPdfResponse =
+            await fetch(
+                `${API_URL}/inscriptions/${nomFichier}`
+            );
+
+
+        if (!inscriptionPdfResponse.ok) {
+
+            const error =
+                await inscriptionPdfResponse.text();
+
+            throw new Error(
+                `Erreur document d'inscription : ${error}`
+            );
+        }
+
+
+        const inscriptionBlob =
+            await inscriptionPdfResponse.blob();
+
+
+        const inscriptionUrl =
+            URL.createObjectURL(inscriptionBlob);
+
+
+        // ==========================================
+        // 5. Télécharger le document d'inscription
+        // ==========================================
 
         const link =
             document.createElement("a");
 
         link.href =
-            pdfUrl;
+            inscriptionUrl;
 
         link.download =
-            `carte_${id}.pdf`;
+            nomFichier;
 
         document.body.appendChild(link);
 
         link.click();
 
         link.remove();
+
+
+        // ==========================================
+        // 6. Afficher la page bienvenue
+        // ==========================================
+
+        form.style.display = "none";
+
+
+        message.innerHTML = `
+            <h2>🎉 Bienvenue !</h2>
+
+            <p>
+                Votre inscription a été enregistrée
+                avec succès.
+            </p>
+
+            <p>
+                Votre document d'inscription
+                a été téléchargé.
+            </p>
+
+            <button
+                type="button"
+                id="generateCardButton"
+            >
+                Générer ma carte
+            </button>
+        `;
+
+
+        // ==========================================
+        // 7. Bouton génération carte
+        // ==========================================
+
+        const generateCardButton =
+            document.getElementById(
+                "generateCardButton"
+            );
+
+
+        generateCardButton.addEventListener(
+            "click",
+            async function () {
+
+                generateCardButton.disabled = true;
+
+                generateCardButton.textContent =
+                    "⏳ Génération de la carte...";
+
+
+                try {
+
+                    // ==========================================
+                    // POST /cartes/:id
+                    // ==========================================
+
+                    const carteResponse =
+                        await fetch(
+                            `${API_URL}/cartes/${id}`,
+                            {
+                                method: "POST"
+                            }
+                        );
+
+
+                    if (!carteResponse.ok) {
+
+                        const error =
+                            await carteResponse.text();
+
+                        throw new Error(
+                            `Erreur génération carte : ${error}`
+                        );
+                    }
+
+
+                    // ==========================================
+                    // Récupérer le PDF
+                    // ==========================================
+
+                    const pdfBlob =
+                        await carteResponse.blob();
+
+
+                    const pdfUrl =
+                        URL.createObjectURL(pdfBlob);
+
+
+                    // ==========================================
+                    // Télécharger la carte
+                    // ==========================================
+
+                    const cardLink =
+                        document.createElement("a");
+
+                    cardLink.href =
+                        pdfUrl;
+
+                    cardLink.download =
+                        `carte_${id}.pdf`;
+
+                    document.body.appendChild(
+                        cardLink
+                    );
+
+                    cardLink.click();
+
+                    cardLink.remove();
+
+
+                    generateCardButton.textContent =
+                        "✅ Carte téléchargée";
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    generateCardButton.disabled =
+                        false;
+
+                    generateCardButton.textContent =
+                        "Générer ma carte";
+
+                    message.innerHTML += `
+                        <p>
+                            ❌ ${error.message}
+                        </p>
+                    `;
+                }
+
+            }
+        );
 
 
     } catch (error) {
@@ -227,9 +338,6 @@ form.addEventListener("submit", async function (event) {
         message.textContent =
             "❌ Une erreur est survenue : " +
             error.message;
-
-
-    } finally {
 
         submitButton.disabled = false;
     }
