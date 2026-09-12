@@ -1,60 +1,100 @@
-const { creerCarte } = require("../controllers/carteController");
-const fs = require("fs");
-const path = require("path");
+const db = require("../database");
 
-function carteRoutes(req, res) {
+const {
+    genererCarte
+} = require("../services/carteService");
 
-    // POST /cartes/:id
-    if (
-        req.method === "POST" &&
-        req.url.startsWith("/cartes/")
-    ) {
 
-        const id = req.url.split("/")[2];
+function creerCarte(req, res, id) {
 
-        creerCarte(req, res, id);
+    const sql = `
+        SELECT *
+        FROM utilisateurs
+        WHERE id = ?
+    `;
 
-        return true;
-    }
 
-    // GET /cartes/:filename
-    if (
-        req.method === "GET" &&
-        req.url.startsWith("/cartes/")
-    ) {
+    db.query(
+        sql,
+        [id],
+        async (err, results) => {
 
-        const filename = req.url.split("/")[2];
+            if (err) {
 
-        const filePath = path.join(
-            __dirname,
-            "../cartes",
-            filename
-        );
+                res.statusCode = 500;
 
-        if (!fs.existsSync(filePath)) {
-            res.statusCode = 404;
-            res.setHeader("Content-Type", "application/json");
+                return res.end(
+                    JSON.stringify({
+                        message: "Erreur serveur",
+                        error: err.message
+                    })
+                );
+            }
 
-            res.end(JSON.stringify({
-                message: "Carte introuvable"
-            }));
 
-            return true;
+            if (results.length === 0) {
+
+                res.statusCode = 404;
+
+                return res.end(
+                    JSON.stringify({
+                        message:
+                            "Utilisateur introuvable"
+                    })
+                );
+            }
+
+
+            const utilisateur =
+                results[0];
+
+
+            try {
+
+                const carte =
+                    await genererCarte(
+                        utilisateur
+                    );
+
+
+                res.statusCode = 201;
+
+
+                res.end(
+                    JSON.stringify({
+
+                        message:
+                            "Carte générée avec succès",
+
+                        fichier:
+                            carte.nomFichier,
+
+                        chemin:
+                            carte.cheminFichier
+                    })
+                );
+
+
+            } catch (error) {
+
+                res.statusCode = 500;
+
+                res.end(
+                    JSON.stringify({
+
+                        message:
+                            "Erreur lors de la génération",
+
+                        error:
+                            error.message
+                    })
+                );
+            }
         }
-
-        res.statusCode = 200;
-        res.setHeader(
-            "Content-Type",
-            "application/pdf"
-        );
-
-        const file = fs.createReadStream(filePath);
-        file.pipe(res);
-
-        return true;
-    }
-
-    return false;
+    );
 }
 
-module.exports = carteRoutes;
+
+module.exports = {
+    creerCarte
+};
