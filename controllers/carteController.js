@@ -14,6 +14,7 @@ function creerCarte(req, res, id) {
         WHERE id = ?
     `;
 
+
     db.query(
         sql,
         [id],
@@ -38,22 +39,27 @@ function creerCarte(req, res, id) {
 
                 return res.end(
                     JSON.stringify({
-                        message: "Utilisateur introuvable"
+                        message:
+                            "Utilisateur introuvable"
                     })
                 );
             }
 
 
-            const utilisateur = results[0];
+            const utilisateur =
+                results[0];
 
 
             try {
 
                 const carte =
-                    await genererCarte(utilisateur);
+                    await genererCarte(
+                        utilisateur
+                    );
 
 
-                // Envoyer directement le PDF
+               
+
                 res.statusCode = 200;
 
                 res.setHeader(
@@ -61,15 +67,9 @@ function creerCarte(req, res, id) {
                     "application/pdf"
                 );
 
-                res.setHeader(
-                    "Content-Disposition",
-                    `inline; filename="${carte.nomFichier}"`
+                const file = fs.createReadStream(
+                    carte.cheminFichier
                 );
-
-                const file =
-                    fs.createReadStream(
-                        carte.cheminFichier
-                    );
 
                 file.pipe(res);
 
@@ -78,15 +78,12 @@ function creerCarte(req, res, id) {
 
                 res.statusCode = 500;
 
-                res.setHeader(
-                    "Content-Type",
-                    "application/json"
-                );
-
                 res.end(
                     JSON.stringify({
+
                         message:
                             "Erreur lors de la génération",
+
                         error:
                             error.message
                     })
