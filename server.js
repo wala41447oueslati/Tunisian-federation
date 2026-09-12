@@ -1,5 +1,6 @@
 const http = require("http");
-
+const fs = require("fs");
+const path = require("path");
 const utilisateurRoutes =
     require("./routes/utilisateurRoutes");
 
@@ -17,17 +18,60 @@ const server = http.createServer((req, res) => {
         req.url === "/" &&
         req.method === "GET"
     ) {
-        res.statusCode = 200;
-
-        res.setHeader(
-            "Content-Type",
-            "application/json"
+        const filePath = path.join(
+            __dirname,
+            "frontend",
+            "index.html"
         );
 
-        res.end(JSON.stringify({
-            message:
-                "Tunisian Federation API fonctionne !"
-        }));
+        res.statusCode = 200;
+        res.setHeader(
+            "Content-Type",
+            "text/html; charset=utf-8"
+        );
+
+        fs.createReadStream(filePath).pipe(res);
+
+        return;
+    }
+    if (
+        req.method === "GET" &&
+        req.url === "/style.css"
+    ) {
+        const filePath = path.join(
+            __dirname,
+            "frontend",
+            "style.css"
+        );
+
+        res.statusCode = 200;
+        res.setHeader(
+            "Content-Type",
+            "text/css"
+        );
+
+        fs.createReadStream(filePath).pipe(res);
+
+        return;
+    }
+
+    if (
+        req.method === "GET" &&
+        req.url === "/script.js"
+    ) {
+        const filePath = path.join(
+            __dirname,
+            "frontend",
+            "script.js"
+        );
+
+        res.statusCode = 200;
+        res.setHeader(
+            "Content-Type",
+            "application/javascript"
+        );
+
+        fs.createReadStream(filePath).pipe(res);
 
         return;
     }
