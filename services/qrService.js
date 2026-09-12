@@ -2,7 +2,8 @@ const QRCode = require("qrcode");
 const fs = require("fs");
 const path = require("path");
 
-const BASE_URL = "http://192.168.100.10:3000";
+const BASE_URL = process.env.BASE_URL ||
+    "http://192.168.100.10:3000";
 
 async function genererQRCode(utilisateurId, dossierDestination) {
 
