@@ -36,9 +36,14 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    console.log("AVANT CARTE ROUTE");
+
     if (carteRoutes(req, res)) {
+        console.log("CARTE ROUTE A REPONDU");
         return;
     }
+
+    console.log("CARTE ROUTE N'A PAS REPONDU");
 
     if (verificationRoutes(req, res)) {
         return;
