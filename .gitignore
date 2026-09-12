@@ -1,5 +1,4 @@
 node_modules/
 uploads/
 cartes/
-package.json
-package-lock.json
+inscriptions/
