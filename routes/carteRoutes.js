@@ -1,4 +1,6 @@
 const { creerCarte } = require("../controllers/carteController");
+const fs = require("fs");
+const path = require("path");
 
 function carteRoutes(req, res) {
 
@@ -11,6 +13,43 @@ function carteRoutes(req, res) {
         const id = req.url.split("/")[2];
 
         creerCarte(req, res, id);
+
+        return true;
+    }
+
+    // GET /cartes/:filename
+    if (
+        req.method === "GET" &&
+        req.url.startsWith("/cartes/")
+    ) {
+
+        const filename = req.url.split("/")[2];
+
+        const filePath = path.join(
+            __dirname,
+            "../cartes",
+            filename
+        );
+
+        if (!fs.existsSync(filePath)) {
+            res.statusCode = 404;
+            res.setHeader("Content-Type", "application/json");
+
+            res.end(JSON.stringify({
+                message: "Carte introuvable"
+            }));
+
+            return true;
+        }
+
+        res.statusCode = 200;
+        res.setHeader(
+            "Content-Type",
+            "application/pdf"
+        );
+
+        const file = fs.createReadStream(filePath);
+        file.pipe(res);
 
         return true;
     }
